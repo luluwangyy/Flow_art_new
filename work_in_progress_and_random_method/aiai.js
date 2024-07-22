@@ -1,4 +1,3 @@
-//this is the code for the AI generated image effect
 document.getElementById('imageForm').addEventListener('submit', function (event) {
     event.preventDefault();
 
@@ -47,6 +46,26 @@ document.getElementById('imageForm').addEventListener('submit', function (event)
         console.error('Error:', error.message);
     });
 });
+
+let animationPaused = false;
+let animationId;
+
+document.getElementById('pauseButton').addEventListener('click', function () {
+    if (!animationPaused) {
+        animationPaused = true;
+        cancelAnimationFrame(animationId); // Pause the animation
+        takeScreenshot(); // Take a screenshot of the canvas
+    }
+});
+
+function takeScreenshot() {
+    const canvas = document.getElementById('canvas1');
+    const imageContainer = document.getElementById('imageContainer');
+    const screenshot = new Image();
+    screenshot.src = canvas.toDataURL(); // Convert canvas to image
+    imageContainer.innerHTML = ''; // Clear previous images
+    imageContainer.appendChild(screenshot); // Display the screenshot
+}
 
 function initializeEffect(img) {
     const canvas = document.getElementById('canvas1');
@@ -312,12 +331,14 @@ function initializeEffect(img) {
     const effect = new Effect(canvas, ctx);
 
     function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!animationPaused) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        effect.render(offscreenCtx);
-        ctx.drawImage(offscreenCanvas, 0, 0);
+            effect.render(offscreenCtx);
+            ctx.drawImage(offscreenCanvas, 0, 0);
 
-        requestAnimationFrame(animate);
+            animationId = requestAnimationFrame(animate);
+        }
     }
     animate();
 }
