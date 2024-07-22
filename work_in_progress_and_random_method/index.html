@@ -3,18 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Generation</title>
+    <title>Multi-Layer Diffusive Effect</title>
     <link rel="stylesheet" href="../style.css"> <!-- Ensure style.css exists one level up -->
+    <style>
+        body {
+            display: flex;
+            flex-direction: row;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        .sidebar {
+            width: 20%;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+        .main-content {
+            width: 80%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .image-container {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 20px;
+            background-color: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        #diffusiveEffectContainer {
+            position: relative;
+            width: 80%;
+            margin-top: 20px;
+            border: 2px solid rgb(255, 255, 255); /* Black frame */
+            background-color: #ffffff00; /* Ensure no fill color */
+        }
+        #diffusiveEffect {
+            width: 100%;
+            height: 500px; /* Smaller height */
+            background-color: #ffffff00;
+        }
+          #pauseButton {
+        position: absolute;
+        top: 5px; /* Adjusted to be above the diffusive effect container */
+        right: 0;
+        padding: 10px;
+        background-color: blue;
+        color: white;
+        border: none;
+        cursor: pointer;
+        z-index: 1000; /* Ensure the button is on top of other elements */
+    }
+    </style>
 </head>
 <body>
-    <form id="imageForm">
-        <input type="text" id="textInput" placeholder="Enter prompt">
-        <input type="text" id="apiKeyInput" placeholder="Enter your OpenAI API Key">
-        <button type="submit">Generate Image</button>
-    </form>
-    <div id="imageContainer"></div>
-    <canvas id="canvas1"></canvas>
-    <button id="pauseButton">Pause</button> <!-- Add Pause button -->
-    <script src="aiai.js"></script> 
+    <div class="sidebar">
+        <div class="input-group">
+            <input type="text" id="apiKeyInput" placeholder="API Key Input">
+            <button onclick="submitLayer(0)">Submit</button>
+        </div>
+        <div class="input-group">
+            <input type="text" id="layer1Input" placeholder="Layer 1 Input">
+            <button onclick="submitLayer(1)">Submit</button>
+        </div>
+        <div class="input-group">
+            <input type="text" id="layer2Input" placeholder="Layer 2 Input">
+            <button onclick="submitLayer(2)">Submit</button>
+        </div>
+        <div class="input-group">
+            <input type="text" id="layer3Input" placeholder="Layer 3 Input">
+            <button onclick="submitLayer(3)">Submit</button>
+        </div>
+        <div class="image-container" id="layer1ImageContainer">Layer 1 AI generated Image</div>
+        <div class="image-container" id="layer2ImageContainer">Layer 2 AI generated Image</div>
+        <div class="image-container" id="layer3ImageContainer">Layer 3 AI generated Image</div>
+    </div>
+    <div class="main-content">
+        <div id="diffusiveEffectContainer">
+            <div id="diffusiveEffect">
+                Diffusive effect
+                <canvas id="canvas1"></canvas>
+            </div>
+        </div>
+        <button id="pauseButton" onclick="pauseEffect()">Pause</button>
+    </div>
+    <script src="aiai.js"></script> <!-- Ensure aiai.js is linked correctly -->
 </body>
 </html>

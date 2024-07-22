@@ -1,8 +1,18 @@
-document.getElementById('imageForm').addEventListener('submit', function (event) {
-    event.preventDefault();
+let apiKey;
+let layers = [];
+let animationPaused = false;
+let animationId;
 
-    const textInput = document.getElementById('textInput').value;
-    const apiKey = document.getElementById('apiKeyInput').value;
+//document.getElementById('pauseButton').style.display = 'none';
+
+function submitLayer(layer) {
+    if (layer === 0) {
+        apiKey = document.getElementById('apiKeyInput').value;
+        console.log('API key set');
+        return;
+    }
+
+    const textInput = document.getElementById(`layer${layer}Input`).value;
 
     fetch("https://api.openai.com/v1/images/generations", {
         method: "POST",
@@ -30,52 +40,53 @@ document.getElementById('imageForm').addEventListener('submit', function (event)
     .then((data) => {
         const imageUrl = data.data[0].url;
         const proxyUrl = `http://localhost:3000/proxy?url=${encodeURIComponent(imageUrl)}`;
-        const imageContainer = document.getElementById('imageContainer');
-        imageContainer.innerHTML = ''; // Clear previous image
+        const imageContainer = document.getElementById(`layer${layer}ImageContainer`);
         const img = new Image();
         img.crossOrigin = "Anonymous"; // Set CORS attribute
         img.src = proxyUrl;
         img.onload = () => {
+            imageContainer.innerHTML = '';
             imageContainer.appendChild(img);
-            initializeEffect(img);
+            layers[layer] = { img: img, url: proxyUrl };
+            if (layer === 1) {
+                startEffect(img);
+            }
         };
-
-        console.log(proxyUrl); // Log the image URL to the console
     })
     .catch((error) => {
         console.error('Error:', error.message);
     });
-});
+}
 
-let animationPaused = false;
-let animationId;
-
-document.getElementById('pauseButton').addEventListener('click', function () {
+function pauseEffect() {
     if (!animationPaused) {
         animationPaused = true;
         cancelAnimationFrame(animationId); // Pause the animation
         takeScreenshot(); // Take a screenshot of the canvas
+        document.getElementById('pauseButton').style.display = 'none';
     }
-});
+}
 
 function takeScreenshot() {
     const canvas = document.getElementById('canvas1');
-    const imageContainer = document.getElementById('imageContainer');
+    const imageContainer = document.getElementById('diffusiveEffect');
     const screenshot = new Image();
     screenshot.src = canvas.toDataURL(); // Convert canvas to image
     imageContainer.innerHTML = ''; // Clear previous images
     imageContainer.appendChild(screenshot); // Display the screenshot
+    imageContainer.appendChild(document.getElementById('pauseButton'));
 }
 
-function initializeEffect(img) {
+function startEffect(img) {
+    document.getElementById('pauseButton').style.display = 'block';
     const canvas = document.getElementById('canvas1');
     const ctx = canvas.getContext('2d');
 
     const offscreenCanvas = document.createElement('canvas');
     const offscreenCtx = offscreenCanvas.getContext('2d');
 
-    canvas.width = 1050;
-    canvas.height = 700;
+    canvas.width = document.getElementById('diffusiveEffect').clientWidth;
+    canvas.height = document.getElementById('diffusiveEffect').clientHeight;
 
     offscreenCanvas.width = canvas.width;
     offscreenCanvas.height = canvas.height;
@@ -217,33 +228,6 @@ function initializeEffect(img) {
                 // this.resize(e.target.innerWidth, e.target.innerHeight);
             });
         }
-        drawText() {
-            this.context.font = '450px Impact';
-            this.context.textAlign = 'center';
-            this.context.textBaseline = 'middle';
-
-            const gradient1 = this.context.createLinearGradient(0, 0, this.width, this.height);
-            gradient1.addColorStop(0.2, 'rgb(255,0,0)');
-            gradient1.addColorStop(0.4, 'rgb(0,255,0)');
-            gradient1.addColorStop(0.6, 'rgb(150,100,100)');
-            gradient1.addColorStop(0.8, 'rgb(0,255,255)');
-
-            const gradient2 = this.context.createLinearGradient(0, 0, this.width, this.height);
-            gradient2.addColorStop(0.2, 'rgb(255,255,0)');
-            gradient2.addColorStop(0.4, 'rgb(200,5,50)');
-            gradient2.addColorStop(0.6, 'rgb(150,255,255)');
-            gradient2.addColorStop(0.8, 'rgb(255,255,150)');
-
-            const gradient3 = this.context.createRadialGradient(this.width * 0.5, this.height * 0.5, 10, this.width * 0.5, this.height * 0.5, this.width);
-            gradient3.addColorStop(0.2, 'rgb(0,0,255)');
-            gradient3.addColorStop(0.4, 'rgb(200,255,0)');
-            gradient3.addColorStop(0.6, 'rgb(0,0,255)');
-            gradient3.addColorStop(0.8, 'rgb(0,0,0)');
-
-            this.context.fillStyle = gradient3;
-            var x = document.getElementById('a').value;
-            this.context.fillText(x, this.width * 0.5, this.height * 0.5, this.width * 0.8);
-        }
         drawFlowFieldImage() {
             let imageSize = this.width * 1;
             this.context.drawImage(this.image, this.width * 0.5 - imageSize * 0.5, this.height * 0.5 - imageSize * 0.5, imageSize, imageSize);
@@ -253,8 +237,6 @@ function initializeEffect(img) {
             // draw image
             this.drawFlowFieldImage();
 
-            // text
-            // this.drawText();
             this.rows = Math.floor(this.height / this.cellSize);
             this.cols = Math.floor(this.width / this.cellSize);
             this.flowField = [];
@@ -319,7 +301,6 @@ function initializeEffect(img) {
             if (this.debug) {
                 this.drawGrid();
                 this.drawFlowFieldImage();
-                this.drawText();
             }
             this.particles.forEach(particle => {
                 particle.draw(this.context);
