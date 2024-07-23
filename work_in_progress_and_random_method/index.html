@@ -47,7 +47,7 @@
             position: relative;
             width: 80%;
             margin-top: 20px;
-            border: 2px solid rgb(255, 255, 255); /* Black frame */
+            border: 2px solid black; /* Black frame */
             background-color: #ffffff00; /* Ensure no fill color */
         }
         #diffusiveEffect {
@@ -55,17 +55,17 @@
             height: 500px; /* Smaller height */
             background-color: #ffffff00;
         }
-          #pauseButton {
-        position: absolute;
-        top: 5px; /* Adjusted to be above the diffusive effect container */
-        right: 0;
-        padding: 10px;
-        background-color: blue;
-        color: white;
-        border: none;
-        cursor: pointer;
-        z-index: 1000; /* Ensure the button is on top of other elements */
-    }
+        #pauseButton {
+            position: absolute;
+            top: 5px; /* Adjusted to be above the diffusive effect container */
+            right: 0;
+            padding: 10px;
+            background-color: blue;
+            color: white;
+            border: none;
+            cursor: pointer;
+            z-index: 1000; /* Ensure the button is on top of other elements */
+        }
     </style>
 </head>
 <body>
@@ -93,8 +93,9 @@
     <div class="main-content">
         <div id="diffusiveEffectContainer">
             <div id="diffusiveEffect">
-                Diffusive effect
                 <canvas id="canvas1"></canvas>
+                <canvas id="canvas2"></canvas>
+                <canvas id="canvas3"></canvas>
             </div>
         </div>
         <button id="pauseButton" onclick="pauseEffect()">Pause</button>

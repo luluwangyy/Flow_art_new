@@ -89,10 +89,32 @@ function takeScreenshot() {
 }
 
 function startEffect(img, layer) {
+    let canvasId;
+    if (layer === 1) {
+        canvasId = 'canvas1';
+    } else if (layer === 2) {
+        canvasId = 'canvas2';
+    } else if (layer === 3) {
+        canvasId = 'canvas3';
+    } else {
+        console.error('Invalid layer:', layer);
+        return;
+    }
+
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.error('Canvas element not found:', canvasId);
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Failed to get 2D context for canvas:', canvasId);
+        return;
+    }
+
     console.log('Starting effect for layer:', layer); // Debugging log
     document.getElementById('pauseButton').style.display = 'block';
-    const canvas = document.getElementById('canvas1');
-    const ctx = canvas.getContext('2d');
 
     const offscreenCanvas = document.createElement('canvas');
     const offscreenCtx = offscreenCanvas.getContext('2d');
@@ -103,18 +125,6 @@ function startEffect(img, layer) {
 
     offscreenCanvas.width = canvas.width;
     offscreenCanvas.height = canvas.height;
-
-    // Draw the base image if it exists
-    if (baseImage) {
-        const baseImg = new Image();
-        baseImg.src = baseImage.src;
-        baseImg.onload = () => {
-            ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
-            runEffect();
-        };
-    } else {
-        runEffect();
-    }
 
     function runEffect() {
         // canvas settings
@@ -348,5 +358,17 @@ function startEffect(img, layer) {
             }
         }
         animate();
+    }
+
+    // Draw the base image if it exists
+    if (baseImage) {
+        const baseImg = new Image();
+        baseImg.src = baseImage.src;
+        baseImg.onload = () => {
+            ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
+            runEffect();
+        };
+    } else {
+        runEffect();
     }
 }
