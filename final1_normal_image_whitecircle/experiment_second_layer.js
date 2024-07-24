@@ -20,26 +20,40 @@ document.addEventListener('DOMContentLoaded', function () {
         ctx.lineWidth = 0.1;
 
         class Particle_person {
-            constructor(effect) {
+            constructor(effect){
                 this.effect = effect;
-                this.size = Math.random() * 0.3 + 1; // Adjust the size range as needed
-                this.speedModifier = Math.random() * 0.1 + 1;
-                this.history = [];
-                this.maxLength = 500;
-                //this.angle = 0; set to right horizontal
-                this.angle = Math.PI * 1.5; // Initially set to upwards
-                this.angleCorrector = Math.random() * 0.1 + 0.00; // Smaller angle correction for smoother movement
-                this.timer = this.maxLength * 2;//this controll how long disappear: 0.9 is quite weird
-                this.path = [];
-                this.reset();
+                this.size = Math.random() * 0.3 + 0.1; //
+                this.x = Math.floor(Math.random() * this.effect.width);
+                this.y = Math.floor(Math.random() * this.effect.height);
+                this.speedX;
+                this.speedY;
+                this.speedModifier = Math.random()*200+1 ; //Math.floor(Math.random() * 2 + 1);
+                this.history = [{x: this.x, y: this.y}];
+                this.maxLength = 120//Math.floor(Math.random() * 60+50);//can change (Math.random() * 60+50)
+                //this varible will change the length of each line
+                //set it larger so the trace can be preserved
+                this.angle = 0;
+                this.newAngle = 0;
+                this.angleCorrector = Math.random() * 0.5 + 0.01;
+                this.timer = this.maxLength * 2;
+                this.red = 0;
+                this.green = 0;
+                this.blue = 0;
+                this.color = 'rgb(' + this.red + ',' + this.green + ',' + this.blue + ')';
+                this.path = []; // Array to store the path
             }
             draw(context) {
                 context.beginPath();
                 context.moveTo(this.history[0].x, this.history[0].y);
-                for (let i = 0; i < this.history.length; i++) {
+                for (let i = 1; i < this.history.length; i++) {
+                    let darkenFactor = 0.5*i / this.history.length;
+                    let r = Math.max(0, this.red - (this.red * darkenFactor));
+                    let g = Math.max(0, this.green - (this.green * darkenFactor));
+                    let b = Math.max(0, this.blue - (this.blue * darkenFactor));
+                    context.strokeStyle = `rgb(${r}, ${g}, ${b})`;
                     context.lineTo(this.history[i].x, this.history[i].y);
+                    context.moveTo(this.history[i].x, this.history[i].y);
                 }
-                context.strokeStyle = this.color;
                 context.stroke();
 
                 context.beginPath();
@@ -82,9 +96,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     let flowFieldPixel = this.effect.flowField[testIndex];
                     
                     let brightness = (flowFieldPixel.red + flowFieldPixel.green + flowFieldPixel.blue) / 3;
-                    if (brightness <= 5) {
+                    if (brightness <= 100) {
                         this.x = flowFieldPixel.x;
                         this.y = flowFieldPixel.y;
+                        // Darkening factor
+                        const darkenFactor = 1;//lightenFactor if divide
+                        this.red = Math.max(0, flowFieldPixel.red / darkenFactor);
+                        this.green = Math.max(0, flowFieldPixel.green / darkenFactor);
+                        this.blue = Math.max(0, flowFieldPixel.blue / darkenFactor);
+                        this.color = `rgb(${this.red}, ${this.green}, ${this.blue})`;
                         this.history = [{ x: this.x, y: this.y }];
                         this.timer = this.maxLength * 2;
                         resetSuccess = true;
@@ -138,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.width = this.canvas.width;
                 this.height = this.canvas.height;
                 this.particles = [];
-                this.numberOfParticles = 10000;
+                this.numberOfParticles = 20000;
                 this.cellSize = 1;
                 this.rows;
                 this.cols;

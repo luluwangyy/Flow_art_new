@@ -11,6 +11,12 @@
 
   <link rel="stylesheet" href="../style.css">
   <style>
+    #startPerson {
+            position: absolute;
+            top: 0;
+            left: 0;
+            margin: 10px; /* Optional: Add some margin if needed */
+        }
       body {
           margin: 0;
           padding: 0;
@@ -45,24 +51,19 @@
 </head>
 <body>
     <img id="star" src="../image_sample/beautiful-desert-landscape-sunrise_23-2150724941.jpg" style="display: none;">
-    <img id="moon" src="../work_in_progress_and_random_method/image/layer1_edited.png" style="display: none;">
+    <img id="moon" src="../work_in_progress_and_random_method/image/myart_layer1.png" style="display: none;">
     <canvas id="canvas1" width="1050" height="700"></canvas>
     
    
     <div id="sketch-holder"></div> <!-- Placeholder for the sketch -->
     
-    <button id="startPerson">Who</button>
+    <button id="startPerson">Start</button>
     <div id="sketch-holder2"></div> <!-- Placeholder for the sketch -->
 
     <script src="./final_circle.js"></script>
-    <script src="./experiment_flow_up.js"></script>
+    <script src="./experiment_second_layer.js"></script>
 
-    <!-- below button will start the circle flow and the music together -->
-    <button id="startSketch" onClick="playPause()">
-        <audio src="../image_sample/milkyway.mp3" autoplay loop></audio>
-        Look
-    </button>
-      
+    
     <script>
         var aud = document.getElementById("startSketch").children[0];
         var isPlaying = false;
