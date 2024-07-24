@@ -242,7 +242,7 @@ class Effect {
     }
     drawGrid(){
         this.context.save();
-        this.context.strokeStyle = 'black';
+        this.context.strokeStyle = 'white';
         this.context.lineWidth = 0.3;
         for (let c = 0; c < this.cols; c++){
             this.context.beginPath();

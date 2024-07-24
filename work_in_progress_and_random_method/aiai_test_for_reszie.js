@@ -46,8 +46,8 @@ function submitLayer(layer) {
         .then((data) => {
             console.log('Image generation successful'); // Debugging log
             const imageUrl = data.data[0].url;
-            const proxyUrl = `http://localhost:3000/proxy?url=${encodeURIComponent(imageUrl)}`;
-            //const proxyUrl = "image/fire_mountain1.png";
+            //const proxyUrl = `http://localhost:3000/proxy?url=${encodeURIComponent(imageUrl)}`;
+            const proxyUrl = "image/inpaint_bird.png";
             const imageContainer = document.getElementById(`layer${layer}ImageContainer`);
             const img = new Image();
             img.crossOrigin = "Anonymous"; // Set CORS attribute
@@ -121,9 +121,14 @@ function startEffect(img, layer) {
     const offscreenCanvas = document.createElement('canvas');
     const offscreenCtx = offscreenCanvas.getContext('2d');
 
+    // Set canvas size to match the image size while maintaining aspect ratio
     const container = document.getElementById('diffusiveEffect');
-    canvas.width = container.clientWidth;
-    canvas.height = container.clientHeight;
+    const containerWidth = container.clientWidth;
+    const aspectRatio = img.height / img.width;
+    const canvasHeight = containerWidth * aspectRatio;
+
+    canvas.width = containerWidth;
+    canvas.height = canvasHeight;
 
     offscreenCanvas.width = canvas.width;
     offscreenCanvas.height = canvas.height;
@@ -141,7 +146,7 @@ function startEffect(img, layer) {
                 this.y = Math.floor(Math.random() * this.effect.height);
                 this.speedX = 0;
                 this.speedY = 0;
-                this.speedModifier = Math.random() * 3 + 1;
+                this.speedModifier = Math.random() * 30 + 1;
                 this.history = [{ x: this.x, y: this.y }];
                 this.maxLength = 400;
                 this.angle = 0;
@@ -249,7 +254,7 @@ function startEffect(img, layer) {
                 this.width = this.canvas.width;
                 this.height = this.canvas.height;
                 this.particles = [];
-                this.numberOfParticles = 5000;
+                this.numberOfParticles = 15000;
                 this.cellSize = 1;
                 this.rows = 0;
                 this.cols = 0;
