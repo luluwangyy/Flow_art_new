@@ -23,11 +23,11 @@ document.addEventListener('DOMContentLoaded', function () {
             this.y = Math.floor(Math.random() * this.effect.height);
             this.speedX;
             this.speedY;
-            this.size = Math.random() * 0.03 + 0.1; // Adjust the size range as needed
-            this.speedModifier = Math.random() * 0.9 + 1;
+            //this.size = Math.random() * 0.03 + 0.1; // Adjust the size range as needed
+            this.speedModifier = Math.random() * 9 + 1;
             this.history = [{ x: this.x, y: this.y }];
             this.maxLength = 200;
-            this.angle = Math.PI * 1.5; // Initially set to upwards
+            this.angle = 0;//Math.PI * 1.5; // Initially set to upwards
             this.newAngle = 0;
             this.angleCorrector = Math.random() * 0.5 + 0.01;
             this.timer = this.maxLength * 2;
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function () {
             this.path = [];
         }
         draw(context){
-            if (this.history.length === 0) return;
+            //debug so // if (this.history.length === 0) return;
             context.beginPath();
             context.moveTo(this.history[0].x, this.history[0].y);
             for (let i = 0; i < this.history.length; i++){
@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     
 
                 let brightness = (flowFieldPixel.red + flowFieldPixel.green + flowFieldPixel.blue) / 3;
-                if (brightness < 60) {
+                if (brightness < 200) {
                     this.x = flowFieldPixel.x;
                     this.y = flowFieldPixel.y;
                     this.history = [{ x: this.x, y: this.y }];
@@ -197,6 +197,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
     }
 
+
     class Effect_ex3_up {
         constructor(canvas, ctx){
             this.canvas = canvas;
@@ -204,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function () {
             this.width = this.canvas.width;
             this.height = this.canvas.height;
             this.particles = [];
-            this.numberOfParticles = 1000;
+            this.numberOfParticles = 10000;
             this.cellSize = 1;
             this.rows;
             this.cols;
@@ -313,8 +314,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const effect = new Effect_ex3_up(canvas, ctx);
 
     function animate() {
+        console.log`animate() called`;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         effect.render(offscreenCtx);
+        effect.particles.forEach(particle => {
+            particle.draw(offscreenCtx);
+            particle.update();
+        });
+
         ctx.drawImage(offscreenCanvas, 0, 0);
         animationId = requestAnimationFrame(animate);
     }
@@ -343,6 +350,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('toggleBackgroundButton').addEventListener('click', function () {
         showBackground = !showBackground;
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas before re-rendering
+        if (showBackground) {
+            effect.drawFlowFieldImage(); // Redraw the background image if the flag is set
+        }
         effect.init(); // Reinitialize the effect to toggle background image visibility
     });
 
