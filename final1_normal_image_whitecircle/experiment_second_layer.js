@@ -27,14 +27,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.y = Math.floor(Math.random() * this.effect.height);
                 this.speedX;
                 this.speedY;
-                this.speedModifier = Math.random()*200+1 ; //Math.floor(Math.random() * 2 + 1);
+                this.speedModifier = Math.random()*20+1 ; //Math.floor(Math.random() * 2 + 1);
                 this.history = [{x: this.x, y: this.y}];
-                this.maxLength = 120//Math.floor(Math.random() * 60+50);//can change (Math.random() * 60+50)
+                this.maxLength = 60//Math.floor(Math.random() * 60+50);//can change (Math.random() * 60+50)
                 //this varible will change the length of each line
                 //set it larger so the trace can be preserved
                 this.angle = 0;
                 this.newAngle = 0;
-                this.angleCorrector = Math.random() * 0.5 + 0.01;
+                this.angleCorrector = Math.random() * 0.5 + 0.1;
                 this.timer = this.maxLength * 2;
                 this.red = 0;
                 this.green = 0;
@@ -175,8 +175,10 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             drawFlowFieldImage() {
+                
                 let imageSize = this.width * 1;
                 this.context.drawImage(this.image, this.width * 0.5 - imageSize * 0.5, this.height * 0.5 - imageSize * 0.5, imageSize, imageSize);
+               
             }
             init() {
                 this.drawFlowFieldImage();

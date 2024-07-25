@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     attempts++;
                     let testIndex = Math.floor(Math.random() * this.effect.flowField.length);
                     let flowFieldPixel = this.effect.flowField[testIndex];
-                    
+                    /*
                     let brightness = (flowFieldPixel.red + flowFieldPixel.green + flowFieldPixel.blue) / 3;
                     if (brightness <= 5) {
                         this.x = flowFieldPixel.x;
@@ -90,8 +90,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         resetSuccess = true;
                     }
                     
-                   /*
-                   only reddish color:
+                   */
+                   //only reddish color:
                     if (flowFieldPixel.red > 150 && flowFieldPixel.red > flowFieldPixel.green * 1.5 && flowFieldPixel.red > flowFieldPixel.blue * 1.5) {
                         this.x = flowFieldPixel.x;
                         this.y = flowFieldPixel.y;
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         this.color = `rgb(${this.red}, ${this.green}, ${this.blue})`;
                         resetSuccess = true;
                     }
-                        
+                        /*
 
                     Only greenish-yellow color:
                     if (
@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.width = this.canvas.width;
                 this.height = this.canvas.height;
                 this.particles = [];
-                this.numberOfParticles = 10000;
+                this.numberOfParticles = 3000;
                 this.cellSize = 1;
                 this.rows;
                 this.cols;

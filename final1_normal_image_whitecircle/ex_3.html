@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>p5.js with Button</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    #moon {
+    display: none;
+    }
+    #startPerson, #startPerson_up, #pauseButton, #toggleBackgroundButton, #uploadButton, #submitButton {
+      background-color: transparent; /* No background color */
+      border: none; /* No border */
+      font-family: 'Cormorant Garamond'; /* Handwritten font */
+      font-size: 20px; /* Larger font size */
+      font-style: italic; /* Italic text */
+      cursor: pointer;
+      color: white; /* Font color set to white */
+      padding: 10px 20px; /* Adjust padding as needed */
+      transition: transform 0.3s ease; /* Smooth transition for interaction */
+      z-index: 1; /* Ensure button is above the canvas */
+      position: absolute;
+    }
+    #startPerson_up {
+      top: 10px;
+      left: 10px;
+    }
+    #startPerson {
+      top: 50px;
+      left: 10px;
+    }
+    #pauseButton {
+      top: 90px;
+      left: 10px;
+    }
+    #toggleBackgroundButton {
+      top: 130px;
+      left: 10px;
+    }
+    #uploadButton {
+      top: 170px;
+      left: 10px;
+    }
+    #submitButton {
+      top: 210px;
+      left: 10px;
+    }
+    #fileInput {
+      display: none; /* Hidden by default */
+    }
+    body {
+      background-color: lightgrey;
+      margin: 0;
+      padding: 0;
+      font-family: 'Cormorant Garamond', serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #canvas1 {
+      display: block;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  </style>
+</head>
+<body>
+    <input type="file" id="fileInput">
+    <button id="uploadButton">Upload Image</button>
+    <button id="submitButton">Submit</button>
+    <canvas id="canvas1" width="1050" height="700"></canvas>
+    
+    <div id="sketch-holder"></div> <!-- Placeholder for the sketch -->
+    <button id="startPerson_up">Start</button>
+    <button id="startPerson">Start</button>
+    <button id="pauseButton">Pause</button>
+    <button id="toggleBackgroundButton">Toggle Background</button>
+    <div id="sketch-holder2"></div> <!-- Placeholder for the sketch -->
+    <script src="./ex_3_flow_up.js"></script>
+    <script src="./ex_3.js"></script>
+    
+</body>
+</html>
