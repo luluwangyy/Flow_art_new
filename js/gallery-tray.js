@@ -1,7 +1,10 @@
 /**
  * Builds the artwork tray from the Met API, and wires up both desktop
- * drag-and-drop and a touch/click tap-to-select fallback onto the same
- * FlowSketch.addLayer / removeByArtworkId calls.
+ * drag-and-drop and a touch/click tap-to-select fallback onto
+ * FlowSketch.addLayer. Only one painting is active at a time — selecting a
+ * new one replaces the last (FlowSketch.addLayer already clears prior
+ * layers and fires 'flow:layer-evicted', which this file listens for to
+ * keep the tray's active-thumbnail state in sync).
  */
 (function () {
   const tray = document.getElementById('tray');
@@ -44,16 +47,6 @@
     }
   }
 
-  function removeArtwork(artwork) {
-    FlowSketch.removeByArtworkId(artwork.id);
-    setActive(artwork.id, false);
-  }
-
-  function toggleArtwork(artwork) {
-    if (FlowSketch.getActiveArtworkIds().includes(artwork.id)) removeArtwork(artwork);
-    else addArtwork(artwork);
-  }
-
   function buildThumb(artwork, index) {
     const el = document.createElement('div');
     el.className = 'tray-item';
@@ -84,9 +77,9 @@
     });
 
     // Works for both touch tap and desktop click (a real drag doesn't fire click).
-    el.addEventListener('click', () => toggleArtwork(artwork));
+    el.addEventListener('click', () => addArtwork(artwork));
     el.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleArtwork(artwork); }
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); addArtwork(artwork); }
     });
 
     thumbsById.set(artwork.id, el);
@@ -112,6 +105,14 @@
   });
 
   window.addEventListener('flow:layer-evicted', (e) => setActive(e.detail.artworkId, false));
+
+  const clearBtn = document.getElementById('clearBtn');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      FlowSketch.clearAll();
+      hideCaption();
+    });
+  }
 
   (async function init() {
     const artworks = await MetAPI.loadAll();

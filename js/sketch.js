@@ -1,12 +1,15 @@
 /**
  * Flow field engine — ported from the original raw-Canvas2D technique in
- * final3/final3_layer1.js (see main branch), rebuilt in p5.js with support
- * for multiple simultaneous layers, live-tunable params, and dynamic image
- * sources (dropped-in Met artworks) instead of static <img> tags.
+ * final3/final3_layer1.js (see main branch), rebuilt in p5.js with
+ * live-tunable params and dynamic image sources (dropped-in Met artworks)
+ * instead of static <img> tags. One active painting at a time: dropping a
+ * new one replaces the last, and the source painting is shown faintly as a
+ * background, scaled/positioned identically to how it seeds the flow field
+ * so the particles visually align with the brushwork underneath.
  */
 
 const FlowSketch = (() => {
-  const MAX_LAYERS = 3;
+  const MAX_LAYERS = 1;
   const params = { speed: 1, density: 900, trailLength: 220 };
 
   let layers = []; // { id, artwork, img, buffer, flowField, cols, rows, cellSize, particles }
@@ -100,7 +103,13 @@ const FlowSketch = (() => {
       const iw = this.img.naturalWidth, ih = this.img.naturalHeight;
       const scale = Math.max(width / iw, height / ih);
       const dw = iw * scale, dh = ih * scale;
-      buf.drawingContext.drawImage(this.img, (width - dw) / 2, (height - dh) / 2, dw, dh);
+      // Store the exact "cover" placement so the visible background draw
+      // (see step()) lines up pixel-for-pixel with what the flow field sampled.
+      this.bgX = (width - dw) / 2;
+      this.bgY = (height - dh) / 2;
+      this.bgW = dw;
+      this.bgH = dh;
+      buf.drawingContext.drawImage(this.img, this.bgX, this.bgY, this.bgW, this.bgH);
       buf.loadPixels();
       const px = buf.pixels;
       this.cols = Math.floor(width / this.cellSize);
@@ -124,6 +133,10 @@ const FlowSketch = (() => {
       if (this.particles.length > target) this.particles.length = target;
     }
     step() {
+      ctx.save();
+      ctx.globalAlpha = 0.32;
+      ctx.drawImage(this.img, this.bgX, this.bgY, this.bgW, this.bgH);
+      ctx.restore();
       for (const p of this.particles) { p.draw(); p.update(); }
     }
   }
@@ -142,7 +155,7 @@ const FlowSketch = (() => {
 
   function draw() {
     clear();
-    ctx.globalCompositeOperation = layers.length > 1 ? 'lighter' : 'source-over';
+    ctx.globalCompositeOperation = 'source-over';
     for (const layer of layers) layer.step();
   }
 
@@ -169,10 +182,10 @@ const FlowSketch = (() => {
   async function addLayer(imageUrl, artwork) {
     const img = await MetAPI.loadImageElement(imageUrl);
     const id = nextId++;
-    if (layers.length >= MAX_LAYERS) {
-      const removed = layers.shift();
-      window.dispatchEvent(new CustomEvent('flow:layer-evicted', { detail: { artworkId: removed.artwork.id } }));
-    }
+    // Only one painting active at a time — dropping a new one replaces the last.
+    const evicted = layers.map(l => l.artwork.id);
+    layers = [];
+    evicted.forEach(artworkId => window.dispatchEvent(new CustomEvent('flow:layer-evicted', { detail: { artworkId } })));
     const layer = new Layer(id, img, artwork);
     layers.push(layer);
     notifyChange();
@@ -185,7 +198,9 @@ const FlowSketch = (() => {
   }
 
   function clearAll() {
+    const evicted = layers.map(l => l.artwork.id);
     layers = [];
+    evicted.forEach(artworkId => window.dispatchEvent(new CustomEvent('flow:layer-evicted', { detail: { artworkId } })));
     notifyChange();
   }
 

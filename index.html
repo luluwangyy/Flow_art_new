@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flow — an impressionist flow field</title>
-<meta name="description" content="Drag Impressionist paintings from The Met's collection onto a generative flow field and watch them come alive as flowing brushstrokes.">
+<title>Flow — a study in Impressionist and Post-Impressionist motion</title>
+<meta name="description" content="Drag a Van Gogh, Renoir, or Morisot painting from The Met's collection onto a generative flow field and watch its brushwork come alive as motion.">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,11 +22,17 @@
   </div>
 
   <header id="site-header">
-    <h1>Flow</h1>
-    <p class="subtitle">An interactive study in Impressionist motion — drag up to three paintings onto the canvas.</p>
+    <div class="text-plate">
+      <h1>Flow</h1>
+      <p class="subtitle">A study in Impressionist and Post-Impressionist motion.</p>
+      <p class="subtitle subtitle-meaning">This piece visualizes each painting's motion by tracing thousands of particles along its brushwork and light — turning brushstrokes an artist once placed by hand back into the movement they were always suggesting.</p>
+    </div>
   </header>
 
   <div id="top-controls">
+    <button id="clearBtn" class="icon-btn has-layers-only" aria-label="Clear current painting" title="Clear">
+      <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+    </button>
     <button id="audioToggle" class="icon-btn" aria-label="Toggle ambient sound" aria-pressed="false" title="Sound">
       <svg viewBox="0 0 24 24" class="icon-muted"><path d="M4 9v6h4l5 5V4L8 9H4z"/><line x1="16" y1="9" x2="21" y2="14"/><line x1="21" y1="9" x2="16" y2="14"/></svg>
       <svg viewBox="0 0 24 24" class="icon-unmuted"><path d="M4 9v6h4l5 5V4L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a9 9 0 0 1 0 12"/></svg>
@@ -53,8 +59,10 @@
   </div>
 
   <div id="caption" class="hidden">
-    <p class="caption-title"></p>
-    <p class="caption-meta"></p>
+    <div class="text-plate">
+      <p class="caption-title"></p>
+      <p class="caption-meta"></p>
+    </div>
   </div>
 
   <footer id="tray-wrap">

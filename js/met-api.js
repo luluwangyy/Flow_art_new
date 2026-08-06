@@ -10,18 +10,13 @@ const MET_OBJECT_IDS = [
   436524, // Van Gogh — Sunflowers
   436528, // Van Gogh — Irises
   437984, // Van Gogh — La Berceuse
-  438817, // Degas — The Dance Class
-  436141, // Degas — The Dancing Class
-  436174, // Degas — A Woman Ironing
-  436155, // Degas — The Rehearsal of the Ballet Onstage
-  437682, // Sisley — View of Marly-le-Roi from Coeur-Volant
-  437685, // Sisley — The Road from Versailles to Louveciennes
-  437299, // Pissarro — Jalais Hill, Pontoise
-  437654, // Seurat — Circus Sideshow
-  438821, // Gauguin — Ia Orana Maria
   438815, // Renoir — Madame Georges Charpentier and Her Children
+  437437, // Renoir — Young Woman (La Servante)
+  437439, // Renoir — A Young Girl with Daisies
+  438009, // Morisot — The Pink Dress
+  337864, // Morisot — A Woman Seated at a Bench on the Avenue du Bois
   437159, // Morisot — Young Woman Knitting
-  436947, // Manet — Boating
+  336672, // Morisot — Young Woman Reclining
 ];
 
 const MetAPI = (() => {
