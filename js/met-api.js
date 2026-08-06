@@ -40,17 +40,34 @@ const MetAPI = (() => {
     return artwork;
   }
 
-  // The Met's image CDN serves Access-Control-Allow-Origin: *, so a plain
-  // crossOrigin="anonymous" <img> load gives non-tainted canvas pixel access
-  // (verified directly — no fetch()/blob indirection needed).
-  function loadImageElement(url) {
+  // Fetch the image as a blob and load it from a blob: object URL, which is
+  // same-origin — so canvas pixel reads never need crossOrigin/CORS at all.
+  // (A crossOrigin="anonymous" <img> load also works in principle since the
+  // Met's CDN sends Access-Control-Allow-Origin: *, but proved unreliable
+  // in practice; a plain fetch() of the same URL is consistently solid.)
+  function elementFromBlob(blob) {
     return new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(blob);
       const img = new Image();
-      img.crossOrigin = 'anonymous';
       img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error('Image failed to load: ' + url));
-      img.src = url;
+      img.onerror = () => reject(new Error('Decoding image blob failed'));
+      img.src = objectUrl;
     });
+  }
+
+  async function loadImageElement(url, attempts = 3) {
+    let lastErr;
+    for (let i = 0; i < attempts; i++) {
+      try {
+        const res = await fetch(url, { cache: 'force-cache' });
+        if (!res.ok) throw new Error('Image fetch error ' + res.status);
+        const blob = await res.blob();
+        return await elementFromBlob(blob);
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    throw lastErr;
   }
 
   async function loadAll() {
