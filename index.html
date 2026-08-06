@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flow — an impressionist flow field</title>
+<meta name="description" content="Drag Impressionist paintings from The Met's collection onto a generative flow field and watch them come alive as flowing brushstrokes.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="canvas-container">
+    <div id="empty-state">
+      <p>drag a painting in<span class="tap-hint"> · or tap one below</span></p>
+    </div>
+  </div>
+
+  <header id="site-header">
+    <h1>Flow</h1>
+    <p class="subtitle">An interactive study in Impressionist motion — drag up to three paintings onto the canvas.</p>
+  </header>
+
+  <div id="top-controls">
+    <button id="audioToggle" class="icon-btn" aria-label="Toggle ambient sound" aria-pressed="false" title="Sound">
+      <svg viewBox="0 0 24 24" class="icon-muted"><path d="M4 9v6h4l5 5V4L8 9H4z"/><line x1="16" y1="9" x2="21" y2="14"/><line x1="21" y1="9" x2="16" y2="14"/></svg>
+      <svg viewBox="0 0 24 24" class="icon-unmuted"><path d="M4 9v6h4l5 5V4L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a9 9 0 0 1 0 12"/></svg>
+    </button>
+    <button id="settingsToggle" class="icon-btn" aria-label="Toggle settings" aria-expanded="false" title="Settings">
+      <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.64 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.64a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.36 9c.1.36.34.68.65.9.31.23.68.36 1.06.35H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.05z"/></svg>
+    </button>
+  </div>
+
+  <div id="settings-panel" class="hidden">
+    <label>
+      <span>Speed</span>
+      <input type="range" id="speedSlider" min="0.4" max="2.2" step="0.05" value="1">
+    </label>
+    <label>
+      <span>Density</span>
+      <input type="range" id="densitySlider" min="300" max="2200" step="100" value="900">
+    </label>
+    <label>
+      <span>Trail length</span>
+      <input type="range" id="trailSlider" min="80" max="400" step="10" value="220">
+    </label>
+    <button id="resetBtn">Reset</button>
+  </div>
+
+  <div id="caption" class="hidden">
+    <p class="caption-title"></p>
+    <p class="caption-meta"></p>
+  </div>
+
+  <footer id="tray-wrap">
+    <div id="tray" aria-label="Impressionist paintings, drag or tap to add"></div>
+    <p class="credit">Artworks via <a href="https://www.metmuseum.org/art/collection/search" target="_blank" rel="noopener">The Met Open Access</a> · flow field study by Lulu Wang · <a href="https://github.com/luluwangyy/Flow_art_new/tree/main" target="_blank" rel="noopener">original process →</a></p>
+  </footer>
+
+  <audio id="ambientAudio" src="assets/night_long.mp3" loop preload="none"></audio>
+
+  <script src="js/met-api.js"></script>
+  <script src="js/sketch.js"></script>
+  <script src="js/gallery-tray.js"></script>
+  <script src="js/controls.js"></script>
+  <script src="js/audio.js"></script>
+</body>
+</html>
