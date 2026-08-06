@@ -55,9 +55,12 @@ const MetAPI = (() => {
     });
   }
 
-  async function loadImageElement(url, attempts = 3) {
+  const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
+  async function loadImageElement(url, attempts = 5) {
     let lastErr;
     for (let i = 0; i < attempts; i++) {
+      if (i > 0) await wait(300 * i); // ride out short network blips before retrying
       try {
         const res = await fetch(url, { cache: 'force-cache' });
         if (!res.ok) throw new Error('Image fetch error ' + res.status);

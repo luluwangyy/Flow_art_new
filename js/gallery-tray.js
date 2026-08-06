@@ -41,6 +41,9 @@
       showCaption(artwork);
     } catch (err) {
       console.error('Could not load artwork onto canvas:', err);
+      captionTitle.textContent = "Couldn't load that painting";
+      captionMeta.textContent = 'The Met may be momentarily busy — try again in a moment.';
+      caption.classList.remove('hidden');
     } finally {
       pendingIds.delete(artwork.id);
       if (el) el.style.opacity = '';
