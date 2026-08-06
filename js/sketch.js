@@ -180,7 +180,12 @@ const FlowSketch = (() => {
   }
 
   async function addLayer(imageUrl, artwork) {
-    const img = await MetAPI.loadImageElement(imageUrl);
+    // Request a distinctly-keyed copy of the URL for the crossOrigin="anonymous"
+    // load canvas pixel-reading needs. Reusing the exact URL the (plain, non-CORS)
+    // tray thumbnail already requested can make some browsers serve the cached
+    // non-CORS response for the "anonymous" request too, which then fails.
+    const sampleUrl = imageUrl + (imageUrl.includes('?') ? '&' : '?') + 'cors=1';
+    const img = await MetAPI.loadImageElement(sampleUrl);
     const id = nextId++;
     // Only one painting active at a time — dropping a new one replaces the last.
     const evicted = layers.map(l => l.artwork.id);

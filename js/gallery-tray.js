@@ -58,7 +58,10 @@
     el.dataset.id = artwork.id;
 
     const img = document.createElement('img');
-    img.crossOrigin = 'anonymous'; // keep cache mode consistent with the canvas-sampling load of the same URL
+    // Plain, uncredentialed load — the tray only ever displays these, it never
+    // reads pixels. (Loading many images at once with crossOrigin="anonymous"
+    // is unreliable against the Met's CDN; the flow-field sampler requests
+    // its own distinctly-keyed copy of the URL, see FlowSketch.addLayer.)
     img.src = artwork.imageUrl;
     img.alt = artwork.title;
     img.loading = 'lazy';
