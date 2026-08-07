@@ -41,7 +41,7 @@ const FlowSketch = (() => {
       this.maxLength = initial ? Math.floor(Math.random() * 40) + params.trailLength : params.trailLength;
       this.angle = 0;
       this.newAngle = 0;
-      this.angleCorrector = Math.random() * 0.5 + 0.01;
+      this.angleCorrector = Math.random() * 0.35 + 0.06;
       this.timer = this.maxLength * (Math.random() * 1.5 + 1);
       this.r = 255; this.g = 255; this.b = 255;
       this.color = 'rgba(255,255,255,0.5)';
@@ -58,6 +58,11 @@ const FlowSketch = (() => {
           this.newAngle = f.colorAngle;
           if (this.angle > this.newAngle) this.angle -= this.angleCorrector;
           else if (this.angle < this.newAngle) this.angle += this.angleCorrector;
+          // Small organic jitter — without it, particles crossing a smooth,
+          // low-detail area of a painting (open sky, a flat wall) lock onto
+          // a near-constant angle and draw an unnaturally long straight
+          // streak, since the local flow angle barely varies there.
+          this.angle += (Math.random() - 0.5) * 0.09;
           if (f.alpha > 10) {
             this.r += (f.red - this.r) * 0.1;
             this.g += (f.green - this.g) * 0.1;
