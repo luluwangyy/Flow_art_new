@@ -9,6 +9,7 @@
 (function () {
   const tray = document.getElementById('tray');
   const canvasContainer = document.getElementById('canvas-container');
+  const loadingIndicator = document.getElementById('loading-indicator');
   const caption = document.getElementById('caption');
   const captionTitle = caption.querySelector('.caption-title');
   const captionMeta = caption.querySelector('.caption-meta');
@@ -16,9 +17,10 @@
   const thumbsById = new Map();
   let pendingIds = new Set(); // artworks currently mid-fetch, to prevent double-adds
 
-  function showCaption(artwork) {
+  function showCaption(artwork, note) {
     captionTitle.textContent = artwork.title;
-    captionMeta.innerHTML = `${artwork.artist}${artwork.date ? ' · ' + artwork.date : ''} · <a href="${artwork.objectURL}" target="_blank" rel="noopener">The Met ↗</a>`;
+    captionMeta.innerHTML = `${artwork.artist}${artwork.date ? ' · ' + artwork.date : ''} · <a href="${artwork.objectURL}" target="_blank" rel="noopener">The Met ↗</a>` +
+      (note ? `<br>${note}` : '');
     caption.classList.remove('hidden');
   }
   function hideCaption() {
@@ -35,6 +37,7 @@
     pendingIds.add(artwork.id);
     const el = thumbsById.get(artwork.id);
     if (el) el.style.opacity = '0.5';
+    loadingIndicator.classList.remove('hidden');
     try {
       await FlowSketch.addLayer(artwork.imageUrl, artwork);
       setActive(artwork.id, true);
@@ -47,6 +50,7 @@
     } finally {
       pendingIds.delete(artwork.id);
       if (el) el.style.opacity = '';
+      loadingIndicator.classList.add('hidden');
     }
   }
 
@@ -111,6 +115,14 @@
   });
 
   window.addEventListener('flow:layer-evicted', (e) => setActive(e.detail.artworkId, false));
+  window.addEventListener('flow:pixel-load-failed', (e) => {
+    const active = FlowSketch.getActiveArtworkIds();
+    if (active[0] === e.detail.artworkId) {
+      MetAPI.fetchArtwork(e.detail.artworkId).then((artwork) => {
+        showCaption(artwork, '<em>flow effect unavailable right now — showing the painting as-is</em>');
+      });
+    }
+  });
 
   const clearBtn = document.getElementById('clearBtn');
   if (clearBtn) {

@@ -40,32 +40,61 @@ const MetAPI = (() => {
     return artwork;
   }
 
-  // Fetch the image as a blob and load it from a blob: object URL, which is
-  // same-origin — so canvas pixel reads never need crossOrigin/CORS at all.
-  // (A crossOrigin="anonymous" <img> load also works in principle since the
-  // Met's CDN sends Access-Control-Allow-Origin: *, but proved unreliable
-  // in practice; a plain fetch() of the same URL is consistently solid.)
-  function elementFromBlob(blob) {
-    return new Promise((resolve, reject) => {
-      const objectUrl = URL.createObjectURL(blob);
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error('Decoding image blob failed'));
-      img.src = objectUrl;
-    });
-  }
-
   const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
-  async function loadImageElement(url, attempts = 5) {
+  // Plain, uncredentialed load — works everywhere (no CORS involved at all),
+  // used purely for on-screen display. This is the reliable baseline: the
+  // painting should always be able to show up, even if the fancier
+  // pixel-reading load below can't.
+  function loadDisplayImage(url, attempts = 3) {
+    return retry(attempts, (attemptUrl) => new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Display image failed to load'));
+      img.src = attemptUrl;
+    }), url);
+  }
+
+  // For canvas pixel access (building the flow field) the image needs to be
+  // loaded without tainting the canvas. Two independent strategies are tried,
+  // since ad blockers / privacy extensions / flaky networks can each block
+  // one path but not the other:
+  //   1. crossOrigin="anonymous" <img> — the Met's CDN sends
+  //      Access-Control-Allow-Origin: *, so this works directly when allowed.
+  //   2. fetch() the bytes as a blob and load that via a blob: object URL,
+  //      which is same-origin and so never needs CORS permission at all.
+  function loadPixelSafeImage(url, attempts = 4) {
+    function attempt(attemptUrl, i) {
+      if (i % 2 === 0) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(new Error('crossOrigin image load failed'));
+          img.src = attemptUrl;
+        });
+      }
+      return fetch(attemptUrl).then((res) => {
+        if (!res.ok) throw new Error('Image fetch error ' + res.status);
+        return res.blob();
+      }).then((blob) => new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Decoding image blob failed'));
+        img.src = URL.createObjectURL(blob);
+      }));
+    }
+    return retry(attempts, attempt, url);
+  }
+
+  async function retry(attempts, attemptFn, url) {
     let lastErr;
     for (let i = 0; i < attempts; i++) {
       if (i > 0) await wait(300 * i); // ride out short network blips before retrying
+      const sep = url.includes('?') ? '&' : '?';
+      const attemptUrl = i === 0 ? url : url + sep + '_r=' + i;
       try {
-        const res = await fetch(url, { cache: 'force-cache' });
-        if (!res.ok) throw new Error('Image fetch error ' + res.status);
-        const blob = await res.blob();
-        return await elementFromBlob(blob);
+        return await attemptFn(attemptUrl, i);
       } catch (err) {
         lastErr = err;
       }
@@ -80,5 +109,5 @@ const MetAPI = (() => {
       .map(r => r.value);
   }
 
-  return { fetchArtwork, loadImageElement, loadAll };
+  return { fetchArtwork, loadDisplayImage, loadPixelSafeImage, loadAll };
 })();

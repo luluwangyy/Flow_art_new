@@ -88,28 +88,36 @@ const FlowSketch = (() => {
   }
 
   class Layer {
+    // `img` is always the reliably-loaded display image — geometry and the
+    // background render never depend on the pixel-safe load succeeding.
     constructor(id, img, artwork) {
       this.id = id;
       this.img = img;
       this.artwork = artwork;
-      this.cellSize = Math.max(4, Math.floor(Math.min(width, height) / 140));
-      this.buildField();
+      this.pixelImg = null;
+      this.flowField = null;
       this.particles = [];
-      this.repopulate();
+      this.computeGeometry();
     }
-    buildField() {
-      const buf = createGraphics(width, height);
-      buf.pixelDensity(1);
+    computeGeometry() {
+      this.cellSize = Math.max(4, Math.floor(Math.min(width, height) / 140));
       const iw = this.img.naturalWidth, ih = this.img.naturalHeight;
       const scale = Math.max(width / iw, height / ih);
       const dw = iw * scale, dh = ih * scale;
-      // Store the exact "cover" placement so the visible background draw
-      // (see step()) lines up pixel-for-pixel with what the flow field sampled.
       this.bgX = (width - dw) / 2;
       this.bgY = (height - dh) / 2;
       this.bgW = dw;
       this.bgH = dh;
-      buf.drawingContext.drawImage(this.img, this.bgX, this.bgY, this.bgW, this.bgH);
+    }
+    // Called once a pixel-safe copy of the same image is available (may
+    // never be called, if that load couldn't succeed — the layer still
+    // renders fine as a static background either way). Also re-run on
+    // window resize, reusing the cached pixelImg.
+    buildField(pixelImg) {
+      this.pixelImg = pixelImg;
+      const buf = createGraphics(width, height);
+      buf.pixelDensity(1);
+      buf.drawingContext.drawImage(pixelImg, this.bgX, this.bgY, this.bgW, this.bgH);
       buf.loadPixels();
       const px = buf.pixels;
       this.cols = Math.floor(width / this.cellSize);
@@ -126,8 +134,10 @@ const FlowSketch = (() => {
       }
       this.flowField = field;
       buf.remove();
+      this.repopulate();
     }
     repopulate() {
+      if (!this.flowField) return;
       const target = Math.floor(params.density);
       while (this.particles.length < target) this.particles.push(new Particle(this));
       if (this.particles.length > target) this.particles.length = target;
@@ -163,10 +173,13 @@ const FlowSketch = (() => {
     const container = document.getElementById('canvas-container');
     resizeCanvas(container.clientWidth, container.clientHeight);
     for (const layer of layers) {
-      layer.buildField();
-      // Redistribute particles across the new bounds immediately, rather than
-      // waiting for each one to naturally time out and reset.
-      layer.particles.forEach(p => p.reset(true));
+      layer.computeGeometry();
+      if (layer.pixelImg) {
+        layer.buildField(layer.pixelImg);
+        // Redistribute particles across the new bounds immediately, rather
+        // than waiting for each one to naturally time out and reset.
+        layer.particles.forEach(p => p.reset(true));
+      }
     }
   }
 
@@ -180,9 +193,11 @@ const FlowSketch = (() => {
   }
 
   async function addLayer(imageUrl, artwork) {
-    // MetAPI.loadImageElement handles the crossOrigin="anonymous" load (needed
-    // for canvas pixel access) and its own retry-on-transient-failure logic.
-    const img = await MetAPI.loadImageElement(imageUrl);
+    // The display image is loaded plainly (no CORS involved at all) and is
+    // reliable — the painting always has a chance to show up. Only the
+    // (separate, optional) pixel-safe load below can fail without blocking
+    // that.
+    const img = await MetAPI.loadDisplayImage(imageUrl);
     const id = nextId++;
     // Only one painting active at a time — dropping a new one replaces the last.
     const evicted = layers.map(l => l.artwork.id);
@@ -191,6 +206,18 @@ const FlowSketch = (() => {
     const layer = new Layer(id, img, artwork);
     layers.push(layer);
     notifyChange();
+
+    // Attach the flow field in the background — if it fails, the painting
+    // stays visible as a static image rather than the whole thing erroring out.
+    MetAPI.loadPixelSafeImage(imageUrl)
+      .then((pixelImg) => {
+        if (layers.includes(layer)) layer.buildField(pixelImg);
+      })
+      .catch((err) => {
+        console.warn('Flow effect unavailable for this painting (showing it without motion):', err);
+        window.dispatchEvent(new CustomEvent('flow:pixel-load-failed', { detail: { artworkId: artwork.id } }));
+      });
+
     return id;
   }
 
