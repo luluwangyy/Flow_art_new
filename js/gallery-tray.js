@@ -19,7 +19,11 @@
 
   function showCaption(artwork, note) {
     captionTitle.textContent = artwork.title;
-    captionMeta.innerHTML = `${artwork.artist}${artwork.date ? ' · ' + artwork.date : ''} · <a href="${artwork.objectURL}" target="_blank" rel="noopener">The Met ↗</a>` +
+    const link = artwork.objectURL
+      ? ` · <a href="${artwork.objectURL}" target="_blank" rel="noopener">The Met ↗</a>`
+      : '';
+    const medium = artwork.medium ? `<br>${artwork.medium}` : '';
+    captionMeta.innerHTML = `${artwork.artist}${artwork.date ? ' · ' + artwork.date : ''}${link}${medium}` +
       (note ? `<br>${note}` : '');
     caption.classList.remove('hidden');
   }

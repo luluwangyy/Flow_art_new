@@ -12,11 +12,17 @@ const FlowSketch = (() => {
   const MAX_LAYERS = 1;
   // Actual engine values. The settings panel exposes these as friendly 0–100
   // sliders (see js/controls.js RANGES) rather than these raw numbers.
-  const params = { speed: 1.5, density: 1623, trailLength: 330 };
+  const params = { speed: 1.5, density: 2670, trailLength: 182 };
 
   let layers = []; // { id, artwork, img, buffer, flowField, cols, rows, cellSize, particles }
   let ctx = null;
   let nextId = 1;
+  let noiseTime = 0; // advances every frame; drives the Perlin-noise turbulence all particles share
+
+  // Perlin noise spatial scale (bigger = larger, smoother swirls) and how
+  // strongly it bends a particle's angle each frame.
+  const NOISE_SCALE = 0.006;
+  const NOISE_STRENGTH = 1.1;
 
   class Particle {
     constructor(layer) {
@@ -44,14 +50,17 @@ const FlowSketch = (() => {
       this.angle = 0;
       this.newAngle = 0;
       this.angleCorrector = Math.random() * 0.35 + 0.06;
-      // A smooth, continuous wobble superimposed on the flow-driven angle.
-      // Pure per-frame random jitter can still average out to ~0 over a long
-      // enough run by chance (more likely with more/faster/longer-lived
-      // particles), which is exactly what produced the long straight streaks.
-      // A sine wave can't do that — it's guaranteed to keep bending.
+      // Perlin noise (see draw()/NOISE_SCALE) supplies the primary organic
+      // turbulence, sampled at each particle's own position so nearby
+      // particles curl coherently, like wind. A small secondary sine wobble
+      // rides on top purely as a guarantee: Perlin noise varies smoothly, so
+      // in principle a particle could still ride a near-flat stretch of it
+      // for a while, and a sine wave can never average out to a long
+      // straight run the way that's theoretically possible with noise alone.
+      this.noiseSeed = Math.random() * 1000;
       this.wobbleT = Math.random() * Math.PI * 2;
       this.wobbleFreq = 0.15 + Math.random() * 0.25;
-      this.wobbleAmp = 0.1 + Math.random() * 0.1;
+      this.wobbleAmp = 0.04 + Math.random() * 0.04;
       this.timer = this.maxLength * (Math.random() * 1.5 + 1);
       this.r = 255; this.g = 255; this.b = 255;
       this.color = 'rgba(255,255,255,0.5)';
@@ -69,11 +78,14 @@ const FlowSketch = (() => {
         // off cleanly.
         const inBounds = x >= 0 && x < this.layer.cols && y >= 0 && y < this.layer.rows;
         const f = inBounds ? this.layer.flowField[y * this.layer.cols + x] : null;
-        // Continuous wobble, applied every frame regardless of flow-field
-        // lookup — see the comment on these fields in reset(). Without it,
-        // particles crossing a smooth, low-detail area of a painting (open
-        // sky, a flat wall) can travel an unnaturally long, mechanically
-        // straight streak, since the local flow angle barely varies there.
+        // Perlin-noise turbulence + a small guaranteed-non-flat wobble,
+        // applied every frame regardless of flow-field lookup — see reset()
+        // for why both exist. Without organic variation here, particles
+        // crossing a smooth, low-detail area of a painting (open sky, a
+        // flat wall) can travel an unnaturally long, mechanically straight
+        // streak, since the local flow angle barely varies there.
+        const n = noise(this.x * NOISE_SCALE, this.y * NOISE_SCALE, noiseTime + this.noiseSeed);
+        this.angle += (n - 0.5) * NOISE_STRENGTH;
         this.wobbleT += this.wobbleFreq;
         this.angle += Math.sin(this.wobbleT) * this.wobbleAmp;
         if (f) {
@@ -100,10 +112,17 @@ const FlowSketch = (() => {
       }
     }
     draw() {
-      if (this.history.length < 2) return;
+      const len = this.history.length;
+      if (len < 2) return;
+      // At higher density many more of these run per frame, so long trails
+      // skip points when stroking them — cuts draw cost substantially with
+      // a negligible visual difference at this line width.
+      const step = len > 150 ? 3 : len > 70 ? 2 : 1;
       ctx.beginPath();
       ctx.moveTo(this.history[0].x, this.history[0].y);
-      for (let i = 1; i < this.history.length; i++) ctx.lineTo(this.history[i].x, this.history[i].y);
+      let i = step;
+      for (; i < len; i += step) ctx.lineTo(this.history[i].x, this.history[i].y);
+      if (i - step !== len - 1) { const last = this.history[len - 1]; ctx.lineTo(last.x, last.y); }
       ctx.strokeStyle = this.color;
       ctx.stroke();
     }
@@ -142,16 +161,75 @@ const FlowSketch = (() => {
       buf.drawingContext.drawImage(pixelImg, this.bgX, this.bgY, this.bgW, this.bgH);
       buf.loadPixels();
       const px = buf.pixels;
-      this.cols = Math.floor(width / this.cellSize);
-      this.rows = Math.floor(height / this.cellSize);
-      const field = new Array(this.cols * this.rows);
-      let i = 0;
-      for (let y = 0; y < height; y += this.cellSize) {
-        for (let x = 0; x < width; x += this.cellSize) {
-          const p = (Math.floor(y) * width + Math.floor(x)) * 4;
-          const r = px[p], g = px[p + 1], b = px[p + 2], a = px[p + 3];
-          const gray = (r + g + b) / 3;
-          field[i++] = { x, y, red: r, green: g, blue: b, alpha: a, colorAngle: (gray / 256) * 6.28318 };
+      const cols = this.cols = Math.floor(width / this.cellSize);
+      const rows = this.rows = Math.floor(height / this.cellSize);
+      const cell = this.cellSize;
+      const n = cols * rows;
+
+      // Pass 1: sample raw color + grayscale onto the coarse cell grid.
+      const gray = new Float32Array(n);
+      const red = new Uint8ClampedArray(n), green = new Uint8ClampedArray(n),
+            blue = new Uint8ClampedArray(n), alpha = new Uint8ClampedArray(n);
+      for (let ry = 0; ry < rows; ry++) {
+        for (let rx = 0; rx < cols; rx++) {
+          const p = ((ry * cell) * width + (rx * cell)) * 4;
+          const idx = ry * cols + rx;
+          const r = px[p], g = px[p + 1], b = px[p + 2];
+          red[idx] = r; green[idx] = g; blue[idx] = b; alpha[idx] = px[p + 3];
+          gray[idx] = (r + g + b) / 3;
+        }
+      }
+
+      // Pass 1.5: smooth the grayscale grid before computing gradients.
+      // Impasto brushwork (Van Gogh especially) has heavy local texture
+      // everywhere, so an unsmoothed pixel-to-pixel gradient mostly picks up
+      // brush noise rather than the painting's actual large shapes — that
+      // read as generic scribble rather than a recognizable figure. A box
+      // blur suppresses the fine texture so the gradient responds to real
+      // shape boundaries instead.
+      const blurR = 2;
+      const smooth = new Float32Array(n);
+      for (let ry = 0; ry < rows; ry++) {
+        for (let rx = 0; rx < cols; rx++) {
+          let sum = 0, count = 0;
+          for (let oy = -blurR; oy <= blurR; oy++) {
+            const sy = ry + oy;
+            if (sy < 0 || sy >= rows) continue;
+            const rowBase = sy * cols;
+            for (let ox = -blurR; ox <= blurR; ox++) {
+              const sx = rx + ox;
+              if (sx < 0 || sx >= cols) continue;
+              sum += gray[rowBase + sx];
+              count++;
+            }
+          }
+          smooth[ry * cols + rx] = sum / count;
+        }
+      }
+
+      // Pass 2: flow direction follows the image's actual contours/edges
+      // (perpendicular to the smoothed brightness gradient) rather than an
+      // arbitrary angle derived from absolute brightness — this is what
+      // makes particles trace recognizable shapes in the painting instead
+      // of generic wandering lines. Flat, low-detail areas (no reliable
+      // gradient) fall back to the old brightness-angle behavior.
+      const field = new Array(n);
+      for (let ry = 0; ry < rows; ry++) {
+        for (let rx = 0; rx < cols; rx++) {
+          const idx = ry * cols + rx;
+          const xm = rx > 0 ? rx - 1 : rx, xp = rx < cols - 1 ? rx + 1 : rx;
+          const ym = ry > 0 ? ry - 1 : ry, yp = ry < rows - 1 ? ry + 1 : ry;
+          const dx = smooth[ry * cols + xp] - smooth[ry * cols + xm];
+          const dy = smooth[yp * cols + rx] - smooth[ym * cols + rx];
+          const mag = Math.sqrt(dx * dx + dy * dy);
+          const colorAngle = mag > 1.5
+            ? Math.atan2(dx, -dy) // rotate the gradient 90° -> direction of the edge itself
+            : (gray[idx] / 256) * 6.28318;
+          field[idx] = {
+            x: rx * cell, y: ry * cell,
+            red: red[idx], green: green[idx], blue: blue[idx], alpha: alpha[idx],
+            colorAngle,
+          };
         }
       }
       this.flowField = field;
@@ -188,6 +266,7 @@ const FlowSketch = (() => {
   function draw() {
     clear();
     ctx.globalCompositeOperation = 'source-over';
+    noiseTime += 0.004;
     for (const layer of layers) layer.step();
   }
 
@@ -267,7 +346,7 @@ const FlowSketch = (() => {
   }
 
   function resetParams() {
-    setParams({ speed: 1.5, density: 1623, trailLength: 330 });
+    setParams({ speed: 1.5, density: 2670, trailLength: 182 });
   }
 
   function getParams() { return { ...params }; }

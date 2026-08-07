@@ -18,11 +18,30 @@ const MET_OBJECT_IDS = [
   437299, // Pissarro — Jalais Hill, Pontoise
 ];
 
+// Bundled directly with the site (not from the Met) — same-origin, so
+// there's zero CORS concern for either the display or pixel-safe load.
+// No Met object page exists to link to from its caption.
+const LOCAL_ARTWORKS = [
+  {
+    id: 'local-van-self-portrait-1889',
+    title: 'Self-Portrait',
+    artist: 'Vincent van Gogh',
+    date: '1889',
+    medium: 'Oil on canvas, 25⅗ × 21½ in (65 × 54.5 cm)',
+    imageUrl: 'assets/images/van1.jpg',
+    objectURL: null,
+  },
+];
+// Where it's inserted into the tray order (0-indexed, so 1 = second item).
+const LOCAL_ARTWORK_POSITION = 1;
+
 const MetAPI = (() => {
   const cache = new Map();
+  const localById = new Map(LOCAL_ARTWORKS.map(a => [a.id, a]));
   const BASE = 'https://collectionapi.metmuseum.org/public/collection/v1/objects/';
 
   async function fetchArtwork(objectID) {
+    if (localById.has(objectID)) return localById.get(objectID);
     if (cache.has(objectID)) return cache.get(objectID);
     const res = await fetch(BASE + objectID);
     if (!res.ok) throw new Error('Met API error ' + res.status);
@@ -101,7 +120,9 @@ const MetAPI = (() => {
   }
 
   async function loadAll() {
-    const settled = await Promise.allSettled(MET_OBJECT_IDS.map(fetchArtwork));
+    const ids = [...MET_OBJECT_IDS];
+    ids.splice(LOCAL_ARTWORK_POSITION, 0, ...LOCAL_ARTWORKS.map(a => a.id));
+    const settled = await Promise.allSettled(ids.map(fetchArtwork));
     return settled
       .filter(r => r.status === 'fulfilled' && r.value.imageUrl)
       .map(r => r.value);

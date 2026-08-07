@@ -10,8 +10,8 @@
   // actual engine ranges (see the params default in js/sketch.js).
   const RANGES = {
     speed: [0.3, 2.3],
-    density: [150, 1700],
-    trailLength: [50, 400],
+    density: [200, 2800],
+    trailLength: [30, 220],
   };
   function uiToActual(key, ui) {
     const [lo, hi] = RANGES[key];
