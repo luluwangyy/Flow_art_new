@@ -1,6 +1,6 @@
 # Flow
 
-A live, minimalist reimagining of my generative flow-field study, [Night Cafe](https://github.com/luluwangyy/Flow_art_new/tree/main/final3) — a study in Impressionist and Post-Impressionist motion. Drag a Van Gogh, Renoir, or Morisot painting — pulled live from [The Met's Open Access API](https://www.metmuseum.org/art/collection/search) — onto the canvas and watch it seed a field of particles that trace flowing, painterly brushstrokes in its colors, laid over the painting itself.
+A live, minimalist reimagining of my generative flow-field study, [Night Cafe](https://github.com/luluwangyy/Flow_art_new/tree/main/final3) — a study in Impressionist and Post-Impressionist motion. Drag a Van Gogh, Morisot, Sisley, or Pissarro painting — pulled live from [The Met's Open Access API](https://www.metmuseum.org/art/collection/search) — onto the canvas and watch it seed a field of particles that trace flowing, painterly brushstrokes in its colors, laid over the painting itself.
 
 **Live demo:** https://luluwangyy.github.io/Flow_art_new/
 

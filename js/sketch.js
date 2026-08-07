@@ -10,7 +10,9 @@
 
 const FlowSketch = (() => {
   const MAX_LAYERS = 1;
-  const params = { speed: 1, density: 900, trailLength: 220 };
+  // Actual engine values. The settings panel exposes these as friendly 0–100
+  // sliders (see js/controls.js RANGES) rather than these raw numbers.
+  const params = { speed: 1.5, density: 1623, trailLength: 330 };
 
   let layers = []; // { id, artwork, img, buffer, flowField, cols, rows, cellSize, particles }
   let ctx = null;
@@ -42,6 +44,14 @@ const FlowSketch = (() => {
       this.angle = 0;
       this.newAngle = 0;
       this.angleCorrector = Math.random() * 0.35 + 0.06;
+      // A smooth, continuous wobble superimposed on the flow-driven angle.
+      // Pure per-frame random jitter can still average out to ~0 over a long
+      // enough run by chance (more likely with more/faster/longer-lived
+      // particles), which is exactly what produced the long straight streaks.
+      // A sine wave can't do that — it's guaranteed to keep bending.
+      this.wobbleT = Math.random() * Math.PI * 2;
+      this.wobbleFreq = 0.15 + Math.random() * 0.25;
+      this.wobbleAmp = 0.1 + Math.random() * 0.1;
       this.timer = this.maxLength * (Math.random() * 1.5 + 1);
       this.r = 255; this.g = 255; this.b = 255;
       this.color = 'rgba(255,255,255,0.5)';
@@ -52,17 +62,24 @@ const FlowSketch = (() => {
         const cell = this.layer.cellSize;
         const x = Math.floor(this.x / cell);
         const y = Math.floor(this.y / cell);
-        const idx = y * this.layer.cols + x;
-        const f = this.layer.flowField[idx];
+        // Bounds-check explicitly: a negative x with the flattened row-major
+        // index (y * cols + x) can still land on a valid-looking slot from
+        // the row above, which fed particles bogus flow data right at the
+        // edges and made them ride along the canvas border instead of dying
+        // off cleanly.
+        const inBounds = x >= 0 && x < this.layer.cols && y >= 0 && y < this.layer.rows;
+        const f = inBounds ? this.layer.flowField[y * this.layer.cols + x] : null;
+        // Continuous wobble, applied every frame regardless of flow-field
+        // lookup — see the comment on these fields in reset(). Without it,
+        // particles crossing a smooth, low-detail area of a painting (open
+        // sky, a flat wall) can travel an unnaturally long, mechanically
+        // straight streak, since the local flow angle barely varies there.
+        this.wobbleT += this.wobbleFreq;
+        this.angle += Math.sin(this.wobbleT) * this.wobbleAmp;
         if (f) {
           this.newAngle = f.colorAngle;
           if (this.angle > this.newAngle) this.angle -= this.angleCorrector;
           else if (this.angle < this.newAngle) this.angle += this.angleCorrector;
-          // Small organic jitter — without it, particles crossing a smooth,
-          // low-detail area of a painting (open sky, a flat wall) lock onto
-          // a near-constant angle and draw an unnaturally long straight
-          // streak, since the local flow angle barely varies there.
-          this.angle += (Math.random() - 0.5) * 0.09;
           if (f.alpha > 10) {
             this.r += (f.red - this.r) * 0.1;
             this.g += (f.green - this.g) * 0.1;
@@ -75,7 +92,7 @@ const FlowSketch = (() => {
         this.y += Math.sin(this.angle) * spd;
         this.history.push({ x: this.x, y: this.y });
         if (this.history.length > this.maxLength) this.history.shift();
-        if (this.x < -50 || this.x > width + 50 || this.y < -50 || this.y > height + 50) this.timer = 0;
+        if (!inBounds) this.timer = 0; // start dying the moment it leaves the sampled area, not 50px later
       } else if (this.history.length > 1) {
         this.history.shift();
       } else {
@@ -149,7 +166,7 @@ const FlowSketch = (() => {
     }
     step() {
       ctx.save();
-      ctx.globalAlpha = 0.32;
+      ctx.globalAlpha = 0.27;
       ctx.drawImage(this.img, this.bgX, this.bgY, this.bgW, this.bgH);
       ctx.restore();
       for (const p of this.particles) { p.draw(); p.update(); }
@@ -198,6 +215,11 @@ const FlowSketch = (() => {
   }
 
   async function addLayer(imageUrl, artwork) {
+    // Kick off both loads at once rather than one after the other — the
+    // pixel-safe load (which needs CORS and retries) used to only start
+    // once the display image had already finished, adding its whole
+    // duration again before the first particles could appear.
+    const pixelPromise = MetAPI.loadPixelSafeImage(imageUrl);
     // The display image is loaded plainly (no CORS involved at all) and is
     // reliable — the painting always has a chance to show up. Only the
     // (separate, optional) pixel-safe load below can fail without blocking
@@ -212,9 +234,10 @@ const FlowSketch = (() => {
     layers.push(layer);
     notifyChange();
 
-    // Attach the flow field in the background — if it fails, the painting
-    // stays visible as a static image rather than the whole thing erroring out.
-    MetAPI.loadPixelSafeImage(imageUrl)
+    // Attach the flow field as soon as it's ready — if it fails, the
+    // painting stays visible as a static image rather than the whole thing
+    // erroring out.
+    pixelPromise
       .then((pixelImg) => {
         if (layers.includes(layer)) layer.buildField(pixelImg);
       })
@@ -244,7 +267,7 @@ const FlowSketch = (() => {
   }
 
   function resetParams() {
-    setParams({ speed: 1, density: 900, trailLength: 220 });
+    setParams({ speed: 1.5, density: 1623, trailLength: 330 });
   }
 
   function getParams() { return { ...params }; }

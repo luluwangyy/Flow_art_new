@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Flow — a study in Impressionist and Post-Impressionist motion</title>
-<meta name="description" content="Drag a Van Gogh, Renoir, or Morisot painting from The Met's collection onto a generative flow field and watch its brushwork come alive as motion.">
+<meta name="description" content="Drag a Van Gogh, Morisot, Sisley, or Pissarro painting from The Met's collection onto a generative flow field and watch its brushwork come alive as motion.">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,7 +29,7 @@
     <div class="text-plate">
       <h1>Flow</h1>
       <p class="subtitle">A study in Impressionist and Post-Impressionist motion.</p>
-      <p class="subtitle subtitle-meaning">This piece visualizes each painting's motion by tracing thousands of particles along its brushwork and light — turning brushstrokes an artist once placed by hand back into the movement they were always suggesting.</p>
+      <p class="subtitle subtitle-meaning">Flow reads each painting's brushwork as a flow field, animating thousands of particles through its strokes and light, revealing the motion the artist's hand always implied.</p>
     </div>
   </header>
 
@@ -49,15 +49,15 @@
   <div id="settings-panel" class="hidden">
     <label>
       <span>Speed</span>
-      <input type="range" id="speedSlider" min="0.4" max="2.2" step="0.05" value="1">
+      <input type="range" id="speedSlider" min="0" max="100" step="1" value="60">
     </label>
     <label>
       <span>Density</span>
-      <input type="range" id="densitySlider" min="300" max="2200" step="100" value="900">
+      <input type="range" id="densitySlider" min="0" max="100" step="1" value="95">
     </label>
     <label>
       <span>Trail length</span>
-      <input type="range" id="trailSlider" min="80" max="400" step="10" value="220">
+      <input type="range" id="trailSlider" min="0" max="100" step="1" value="80">
     </label>
     <button id="resetBtn">Reset</button>
   </div>

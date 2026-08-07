@@ -4,19 +4,18 @@
  * === true, primaryImageSmall present, CORS-open image CDN) rather than relying on
  * the Met search endpoint, which text-matches loosely and returns unrelated results.
  */
+// Landscape-orientation works only (verified against each image's actual
+// pixel dimensions) — portrait paintings (Cypresses, La Berceuse, Young
+// Woman/La Servante, A Young Girl with Daisies) were dropped since they
+// don't fit the wide canvas well.
 const MET_OBJECT_IDS = [
-  436535, // Van Gogh — Wheat Field with Cypresses
-  437980, // Van Gogh — Cypresses
   436524, // Van Gogh — Sunflowers
   436528, // Van Gogh — Irises
-  437984, // Van Gogh — La Berceuse
-  438815, // Renoir — Madame Georges Charpentier and Her Children
-  437437, // Renoir — Young Woman (La Servante)
-  437439, // Renoir — A Young Girl with Daisies
   438009, // Morisot — The Pink Dress
   337864, // Morisot — A Woman Seated at a Bench on the Avenue du Bois
   437159, // Morisot — Young Woman Knitting
-  336672, // Morisot — Young Woman Reclining
+  437682, // Sisley — View of Marly-le-Roi from Coeur-Volant
+  437299, // Pissarro — Jalais Hill, Pontoise
 ];
 
 const MetAPI = (() => {
@@ -58,14 +57,13 @@ const MetAPI = (() => {
   // For canvas pixel access (building the flow field) the image needs to be
   // loaded without tainting the canvas. Two independent strategies are tried,
   // since ad blockers / privacy extensions / flaky networks can each block
-  // one path but not the other:
-  //   1. crossOrigin="anonymous" <img> — the Met's CDN sends
-  //      Access-Control-Allow-Origin: *, so this works directly when allowed.
-  //   2. fetch() the bytes as a blob and load that via a blob: object URL,
-  //      which is same-origin and so never needs CORS permission at all.
+  // one path but not the other. fetch()+blob goes first — it's proven more
+  // reliable in practice — with crossOrigin="anonymous" <img> (the Met's CDN
+  // sends Access-Control-Allow-Origin: *, so this works directly when
+  // allowed) as the fallback on retry.
   function loadPixelSafeImage(url, attempts = 4) {
     function attempt(attemptUrl, i) {
-      if (i % 2 === 0) {
+      if (i % 2 === 1) {
         return new Promise((resolve, reject) => {
           const img = new Image();
           img.crossOrigin = 'anonymous';
@@ -90,7 +88,7 @@ const MetAPI = (() => {
   async function retry(attempts, attemptFn, url) {
     let lastErr;
     for (let i = 0; i < attempts; i++) {
-      if (i > 0) await wait(300 * i); // ride out short network blips before retrying
+      if (i > 0) await wait(200 * i); // ride out short network blips before retrying
       const sep = url.includes('?') ? '&' : '?';
       const attemptUrl = i === 0 ? url : url + sep + '_r=' + i;
       try {

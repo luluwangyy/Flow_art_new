@@ -6,6 +6,22 @@
   const trail = document.getElementById('trailSlider');
   const resetBtn = document.getElementById('resetBtn');
 
+  // The sliders show a friendly 0–100 scale; these map to FlowSketch's
+  // actual engine ranges (see the params default in js/sketch.js).
+  const RANGES = {
+    speed: [0.3, 2.3],
+    density: [150, 1700],
+    trailLength: [50, 400],
+  };
+  function uiToActual(key, ui) {
+    const [lo, hi] = RANGES[key];
+    return lo + (ui / 100) * (hi - lo);
+  }
+  function actualToUi(key, actual) {
+    const [lo, hi] = RANGES[key];
+    return Math.round(((actual - lo) / (hi - lo)) * 100);
+  }
+
   function open() {
     panel.classList.remove('hidden');
     toggleBtn.setAttribute('aria-expanded', 'true');
@@ -25,9 +41,9 @@
 
   function applyFromInputs() {
     FlowSketch.setParams({
-      speed: parseFloat(speed.value),
-      density: parseInt(density.value, 10),
-      trailLength: parseInt(trail.value, 10),
+      speed: uiToActual('speed', parseFloat(speed.value)),
+      density: Math.round(uiToActual('density', parseFloat(density.value))),
+      trailLength: Math.round(uiToActual('trailLength', parseFloat(trail.value))),
     });
   }
   [speed, density, trail].forEach(input => input.addEventListener('input', applyFromInputs));
@@ -35,8 +51,8 @@
   resetBtn.addEventListener('click', () => {
     FlowSketch.resetParams();
     const p = FlowSketch.getParams();
-    speed.value = p.speed;
-    density.value = p.density;
-    trail.value = p.trailLength;
+    speed.value = actualToUi('speed', p.speed);
+    density.value = actualToUi('density', p.density);
+    trail.value = actualToUi('trailLength', p.trailLength);
   });
 })();
