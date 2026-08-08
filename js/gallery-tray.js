@@ -13,9 +13,33 @@
   const caption = document.getElementById('caption');
   const captionTitle = caption.querySelector('.caption-title');
   const captionMeta = caption.querySelector('.caption-meta');
+  const hoverPreview = document.getElementById('hover-preview');
+  const hoverPreviewImg = hoverPreview.querySelector('img');
 
   const thumbsById = new Map();
   let pendingIds = new Set(); // artworks currently mid-fetch, to prevent double-adds
+
+  function showHoverPreview(artwork) {
+    hoverPreviewImg.src = artwork.imageUrl;
+    hoverPreviewImg.alt = artwork.title;
+    // Anchored to the caption ("name") card rather than the hovered
+    // thumbnail, so it always sits beside the title/artist text instead of
+    // occasionally overlapping it depending on which thumbnail (near either
+    // end of a scrolling tray) is being hovered.
+    const capRect = caption.getBoundingClientRect();
+    const previewWidth = 220;
+    let left = capRect.right + 14;
+    if (left + previewWidth > window.innerWidth - 12) {
+      left = capRect.left - previewWidth - 14; // flip to the left if there's no room on the right
+    }
+    left = Math.max(12, left);
+    hoverPreview.style.left = left + 'px';
+    hoverPreview.style.bottom = (window.innerHeight - capRect.bottom) + 'px';
+    hoverPreview.classList.add('visible');
+  }
+  function hideHoverPreview() {
+    hoverPreview.classList.remove('visible');
+  }
 
   function showCaption(artwork, note) {
     captionTitle.textContent = artwork.title;
@@ -85,10 +109,15 @@
     });
     el.addEventListener('dragend', () => el.classList.remove('dragging'));
 
-    el.addEventListener('mouseenter', () => showCaption(artwork));
+    el.addEventListener('mouseenter', () => {
+      showCaption(artwork);
+      showHoverPreview(artwork);
+    });
     el.addEventListener('mouseleave', () => {
       if (!FlowSketch.getActiveArtworkIds().includes(artwork.id)) hideCaption();
+      hideHoverPreview();
     });
+    el.addEventListener('dragstart', hideHoverPreview);
 
     // Works for both touch tap and desktop click (a real drag doesn't fire click).
     el.addEventListener('click', () => addArtwork(artwork));
@@ -113,7 +142,14 @@
   canvasContainer.addEventListener('drop', async (e) => {
     e.preventDefault();
     canvasContainer.classList.remove('drag-over');
-    const id = Number(e.dataTransfer.getData('text/plain'));
+    const raw = e.dataTransfer.getData('text/plain');
+    // dataTransfer only ever stores strings. Met artwork ids are numbers
+    // (and MetAPI's cache is keyed by number, from MET_OBJECT_IDS), but
+    // local/bundled artworks (see LOCAL_ARTWORKS in met-api.js) use string
+    // ids — blindly Number()-converting turned those into NaN, so dragging
+    // (though not clicking, which passes the artwork object directly) the
+    // local painting silently failed to resolve to anything.
+    const id = /^\d+$/.test(raw) ? Number(raw) : raw;
     const artwork = await MetAPI.fetchArtwork(id);
     addArtwork(artwork);
   });

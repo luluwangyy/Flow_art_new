@@ -27,9 +27,15 @@
 
   <header id="site-header">
     <div class="text-plate">
+      <button id="descToggle" class="desc-toggle" aria-label="Hide description" aria-pressed="false" title="Hide description">
+        <svg viewBox="0 0 24 24" class="icon-close"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+        <svg viewBox="0 0 24 24" class="icon-open"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg>
+      </button>
       <h1>Flow</h1>
       <p class="subtitle">A study in Impressionist and Post-Impressionist motion.</p>
-      <p class="subtitle subtitle-meaning">Flow reads each painting's brushwork as a flow field, animating thousands of particles through its strokes and light, revealing the motion the artist's hand always implied.</p>
+      <div class="subtitle-meaning-wrap">
+        <p class="subtitle subtitle-meaning">Impressionist brushwork already holds motion within stillness. Flow reads that brushwork as a flow field, animating thousands of particles through each painting's strokes and light to reveal it — through the lens of computer vision.</p>
+      </div>
     </div>
   </header>
 
@@ -37,7 +43,7 @@
     <button id="clearBtn" class="icon-btn has-layers-only" aria-label="Clear current painting" title="Clear">
       <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
     </button>
-    <button id="audioToggle" class="icon-btn" aria-label="Toggle ambient sound" aria-pressed="false" title="Sound">
+    <button id="audioToggle" class="icon-btn" aria-label="Toggle ambient sound" aria-pressed="true" title="Sound">
       <svg viewBox="0 0 24 24" class="icon-muted"><path d="M4 9v6h4l5 5V4L8 9H4z"/><line x1="16" y1="9" x2="21" y2="14"/><line x1="21" y1="9" x2="16" y2="14"/></svg>
       <svg viewBox="0 0 24 24" class="icon-unmuted"><path d="M4 9v6h4l5 5V4L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a9 9 0 0 1 0 12"/></svg>
     </button>
@@ -71,15 +77,18 @@
 
   <footer id="tray-wrap">
     <div id="tray" aria-label="Impressionist paintings, drag or tap to add"></div>
-    <p class="credit">Artworks via <a href="https://www.metmuseum.org/art/collection/search" target="_blank" rel="noopener">The Met Open Access</a> · flow field study by Lulu Wang · <a href="https://github.com/luluwangyy/Flow_art_new/tree/main" target="_blank" rel="noopener">original process →</a></p>
+    <p class="credit">Artworks via <a href="https://www.metmuseum.org/art/collection/search" target="_blank" rel="noopener">The Met Open Access</a> · flow field study by Yueyi Lulu Wang · <a href="https://github.com/luluwangyy/Flow_art_new/tree/main" target="_blank" rel="noopener">GitHub</a></p>
   </footer>
 
-  <audio id="ambientAudio" src="assets/night_long.mp3" loop preload="none"></audio>
+  <div id="hover-preview" aria-hidden="true"><img alt=""></div>
+
+  <audio id="ambientAudio" src="assets/night_long.mp3" loop preload="auto"></audio>
 
   <script src="js/met-api.js"></script>
   <script src="js/sketch.js"></script>
   <script src="js/gallery-tray.js"></script>
   <script src="js/controls.js"></script>
   <script src="js/audio.js"></script>
+  <script src="js/description-toggle.js"></script>
 </body>
 </html>
