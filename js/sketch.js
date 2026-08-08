@@ -294,15 +294,12 @@ const FlowSketch = (() => {
   }
 
   async function addLayer(imageUrl, artwork) {
-    // Kick off both loads at once rather than one after the other — the
-    // pixel-safe load (which needs CORS and retries) used to only start
-    // once the display image had already finished, adding its whole
-    // duration again before the first particles could appear.
+    // Kick off both loads at once, not one after the other. The Met's CDN
+    // sits behind Imperva bot-mitigation, which inconsistently slows down
+    // or blocks fetch()-based requests — never plain <img> loads — so the
+    // painting shows up via the fast, reliable display load as soon as
+    // possible, without waiting on the pixel-safe load's retries.
     const pixelPromise = MetAPI.loadPixelSafeImage(imageUrl);
-    // The display image is loaded plainly (no CORS involved at all) and is
-    // reliable — the painting always has a chance to show up. Only the
-    // (separate, optional) pixel-safe load below can fail without blocking
-    // that.
     const img = await MetAPI.loadDisplayImage(imageUrl);
     const id = nextId++;
     // Only one painting active at a time — dropping a new one replaces the last.

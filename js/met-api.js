@@ -1,47 +1,35 @@
 /**
  * Curated, pre-verified set of public-domain Impressionist / Post-Impressionist
  * works from The Met's Open Access collection. Verified individually (isPublicDomain
- * === true, primaryImageSmall present, CORS-open image CDN) rather than relying on
- * the Met search endpoint, which text-matches loosely and returns unrelated results.
+ * === true, primaryImageSmall present, landscape orientation) rather than relying
+ * on the Met search endpoint, which text-matches loosely and returns unrelated
+ * results.
  */
-// Landscape-orientation works only (verified against each image's actual
-// pixel dimensions) — portrait paintings (Cypresses, La Berceuse, Young
-// Woman/La Servante, A Young Girl with Daisies) were dropped since they
-// don't fit the wide canvas well.
 const MET_OBJECT_IDS = [
+  337864, // Morisot — A Woman Seated at a Bench on the Avenue du Bois
   436524, // Van Gogh — Sunflowers
   436528, // Van Gogh — Irises
   438009, // Morisot — The Pink Dress
-  337864, // Morisot — A Woman Seated at a Bench on the Avenue du Bois
   437159, // Morisot — Young Woman Knitting
   437682, // Sisley — View of Marly-le-Roi from Coeur-Volant
   437299, // Pissarro — Jalais Hill, Pontoise
+  435877, // Cézanne — Mont Sainte-Victoire and the Viaduct of the Arc River Valley
+  437310, // Pissarro — The Boulevard Montmartre on a Winter Morning
+  435882, // Cézanne — Still Life with Apples and a Pot of Primroses
+  437317, // Pissarro — Still Life with Apples and Pitcher
+  437995, // Fantin-Latour — Roses in a Bowl
+  436946, // Manet — The Brioche
+  436448, // Gauguin — A Farm in Brittany
+  438031, // Fantin-Latour — Summer Flowers
+  438015, // Seurat — Gray Weather, Grande Jatte
+  437989, // Cézanne — Dish of Apples
 ];
-
-// Bundled directly with the site (not from the Met) — same-origin, so
-// there's zero CORS concern for either the display or pixel-safe load.
-// No Met object page exists to link to from its caption.
-const LOCAL_ARTWORKS = [
-  {
-    id: 'local-van-self-portrait-1889',
-    title: 'Self-Portrait',
-    artist: 'Vincent van Gogh',
-    date: '1889',
-    medium: 'Oil on canvas, 25⅗ × 21½ in (65 × 54.5 cm)',
-    imageUrl: 'assets/images/van1.jpg',
-    objectURL: null,
-  },
-];
-// Where it's inserted into the tray order (0-indexed, so 1 = second item).
-const LOCAL_ARTWORK_POSITION = 1;
 
 const MetAPI = (() => {
   const cache = new Map();
-  const localById = new Map(LOCAL_ARTWORKS.map(a => [a.id, a]));
   const BASE = 'https://collectionapi.metmuseum.org/public/collection/v1/objects/';
 
   async function fetchArtwork(objectID) {
-    if (localById.has(objectID)) return localById.get(objectID);
     if (cache.has(objectID)) return cache.get(objectID);
     const res = await fetch(BASE + objectID);
     if (!res.ok) throw new Error('Met API error ' + res.status);
@@ -60,10 +48,12 @@ const MetAPI = (() => {
 
   const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
-  // Plain, uncredentialed load — works everywhere (no CORS involved at all),
-  // used purely for on-screen display. This is the reliable baseline: the
-  // painting should always be able to show up, even if the fancier
-  // pixel-reading load below can't.
+  // Plain, uncredentialed load — this is the fast, reliable path (no CORS
+  // involved at all). The Met's CDN sits behind Imperva bot-mitigation,
+  // which occasionally slows down or blocks fetch()-based requests
+  // inconsistently while never affecting a plain <img> load — so the
+  // painting itself should always be able to appear quickly regardless of
+  // how the pixel-safe load below is behaving.
   function loadDisplayImage(url, attempts = 3) {
     return retry(attempts, (attemptUrl) => new Promise((resolve, reject) => {
       const img = new Image();
@@ -73,13 +63,12 @@ const MetAPI = (() => {
     }), url);
   }
 
-  // For canvas pixel access (building the flow field) the image needs to be
-  // loaded without tainting the canvas. Two independent strategies are tried,
-  // since ad blockers / privacy extensions / flaky networks can each block
-  // one path but not the other. fetch()+blob goes first — it's proven more
-  // reliable in practice — with crossOrigin="anonymous" <img> (the Met's CDN
-  // sends Access-Control-Allow-Origin: *, so this works directly when
-  // allowed) as the fallback on retry.
+  // For canvas pixel access the image needs to be loaded without tainting
+  // the canvas — fetch()+blob (blob: URLs are same-origin) with a
+  // crossOrigin <img> fallback on retry. Kicked off in parallel with (not
+  // after) the display load in FlowSketch.addLayer, since this path is the
+  // one occasionally slowed by Imperva; the painting shouldn't have to wait
+  // for it just to appear.
   function loadPixelSafeImage(url, attempts = 4) {
     function attempt(attemptUrl, i) {
       if (i % 2 === 1) {
@@ -107,7 +96,7 @@ const MetAPI = (() => {
   async function retry(attempts, attemptFn, url) {
     let lastErr;
     for (let i = 0; i < attempts; i++) {
-      if (i > 0) await wait(200 * i); // ride out short network blips before retrying
+      if (i > 0) await wait(150 * i); // ride out short network blips before retrying
       const sep = url.includes('?') ? '&' : '?';
       const attemptUrl = i === 0 ? url : url + sep + '_r=' + i;
       try {
@@ -120,9 +109,7 @@ const MetAPI = (() => {
   }
 
   async function loadAll() {
-    const ids = [...MET_OBJECT_IDS];
-    ids.splice(LOCAL_ARTWORK_POSITION, 0, ...LOCAL_ARTWORKS.map(a => a.id));
-    const settled = await Promise.allSettled(ids.map(fetchArtwork));
+    const settled = await Promise.allSettled(MET_OBJECT_IDS.map(fetchArtwork));
     return settled
       .filter(r => r.status === 'fulfilled' && r.value.imageUrl)
       .map(r => r.value);
